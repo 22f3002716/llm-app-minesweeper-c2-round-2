@@ -1,5 +1,5 @@
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -14,57 +14,49 @@ h1 {
     margin-bottom: 20px;
 }
 
-#minesweeper-grid {
+.grid-container {
     display: grid;
-    border: 3px solid #666;
-    background-color: #bbb;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    border: 2px solid #333;
+    background-color: #999;
 }
 
 .cell {
     width: 40px;
     height: 40px;
-    background-color: #ccc;
-    border: 1px solid #999;
+    border: 1px solid #777;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 1.2em;
     font-weight: bold;
     cursor: pointer;
-    user-select: none;
-    transition: background-color 0.1s ease;
+    user-select: none; /* Prevent text selection */
 }
 
-.cell:hover:not(.revealed) {
-    background-color: #ddd;
+.hidden {
+    background-color: #ccc;
 }
 
-.cell.revealed {
-    background-color: #e0e0e0;
-    border: 1px solid #bbb;
+.hidden:hover {
+    background-color: #b0b0b0;
+}
+
+.revealed {
+    background-color: #eee;
     cursor: default;
 }
 
-.cell .cell-content {
-    visibility: hidden; /* Hidden by default */
+.mine-revealed {
+    background-color: #f44;
+    color: white;
 }
 
-.cell.revealed .cell-content {
-    visibility: visible; /* Visible when revealed */
-}
-
-.cell.mine {
-    background-color: #ff6b6b;
-    color: #000;
-}
-
-/* Colors for neighbor counts */
-.cell.count-1 { color: #0000ff; } /* Blue */
-.cell.count-2 { color: #008000; } /* Green */
-.cell.count-3 { color: #ff0000; } /* Red */
-.cell.count-4 { color: #000080; } /* Dark Blue */
-.cell.count-5 { color: #800000; } /* Maroon */
-.cell.count-6 { color: #008080; } /* Teal */
-.cell.count-7 { color: #000000; } /* Black */
-.cell.count-8 { color: #808080; } /* Gray */
+/* Number colors */
+.count-1 { color: blue; }
+.count-2 { color: green; }
+.count-3 { color: red; }
+.count-4 { color: darkblue; }
+.count-5 { color: darkred; }
+.count-6 { color: teal; }
+.count-7 { color: black; }
+.count-8 { color: gray; }
