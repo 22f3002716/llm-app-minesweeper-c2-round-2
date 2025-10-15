@@ -1,35 +1,20 @@
 const GRID_SIZE = 8;
 const NUM_MINES = 10;
-let board = []; // 2D array to store cell objects { isMine: boolean, isRevealed: boolean, neighborCount: number, element: HTMLElement }
+let board = [];
+let gameBoardElement;
+let revealedCellsCount = 0; // To track non-mine cells revealed
 
-// Helper function to get cell coordinates from element ID
-function getCoords(id) {
-    const parts = id.split('-');
-    return { row: parseInt(parts[1]), col: parseInt(parts[2]) };
-}
-
-// Function to initialize the board
-function initializeBoard() {
-    // Create empty board
-    for (let r = 0; r < GRID_SIZE; r++) {
-        board[r] = [];
-        for (let c = 0; c < GRID_SIZE; c++) {
-            board[r][c] = {
-                isMine: false,
-                isRevealed: false,
-                neighborCount: 0,
-                element: null // Will store reference to the DOM element
-            };
-        }
-    }
+function initializeGame() {
+    board = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+    revealedCellsCount = 0;
 
     // Place mines
     let minesPlaced = 0;
     while (minesPlaced < NUM_MINES) {
         const r = Math.floor(Math.random() * GRID_SIZE);
         const c = Math.floor(Math.random() * GRID_SIZE);
-        if (!board[r][c].isMine) {
-            board[r][c].isMine = true;
+        if (board[r][c] !== 'mine') {
+            board[r][c] = 'mine';
             minesPlaced++;
         }
     }
@@ -37,104 +22,131 @@ function initializeBoard() {
     // Calculate neighbor counts
     for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
-            if (!board[r][c].isMine) {
-                board[r][c].neighborCount = window.countNeighbors(r, c); // Using window.countNeighbors for verification check
+            if (board[r][c] !== 'mine') {
+                board[r][c] = window.countNeighbors(r, c); // Use window.countNeighbors for verification
             }
         }
     }
 }
 
-// Function to count neighbors (exposed globally for verification)
+// Make countNeighbors globally accessible for verification
 window.countNeighbors = function(row, col) {
     let count = 0;
     for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
-            if (dr === 0 && dc === 0) continue; // Skip self
+            if (dr === 0 && dc === 0) continue; // Skip current cell
 
-            const newRow = row + dr;
-            const newCol = col + dc;
+            const nr = row + dr;
+            const nc = col + dc;
 
-            if (newRow >= 0 && newRow < GRID_SIZE &&
-                newCol >= 0 && newCol < GRID_SIZE &&
-                board[newRow][newCol].isMine) {
-                count++;
+            if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                if (board[nr][nc] === 'mine') {
+                    count++;
+                }
             }
         }
     }
     return count;
 };
 
-// Function to reveal a cell
+function renderBoard() {
+    gameBoardElement.innerHTML = '';
+    gameBoardElement.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell', 'hidden');
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            cell.addEventListener('click', handleCellClick);
+            gameBoardElement.appendChild(cell);
+        }
+    }
+}
+
+function handleCellClick(event) {
+    const cellElement = event.target;
+    const r = parseInt(cellElement.dataset.row);
+    const c = parseInt(cellElement.dataset.col);
+
+    if (cellElement.classList.contains('revealed')) {
+        return; // Already revealed
+    }
+
+    revealCell(r, c);
+}
+
 function revealCell(row, col) {
-    const cell = board[row][col];
-    if (cell.isRevealed) return; // Already revealed
+    // Check bounds
+    if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) {
+        return;
+    }
 
-    cell.isRevealed = true;
-    cell.element.classList.add('revealed');
+    const cellElement = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+    // Check if element exists and is not already revealed
+    if (!cellElement || cellElement.classList.contains('revealed')) {
+        return;
+    }
 
-    if (cell.isMine) {
-        cell.element.classList.add('mine');
-        cell.element.querySelector('.cell-content').textContent = '💣';
+    cellElement.classList.remove('hidden');
+    cellElement.classList.add('revealed');
+
+    const cellValue = board[row][col];
+
+    if (cellValue === 'mine') {
+        cellElement.textContent = '💣';
+        cellElement.classList.add('mine-revealed');
+        alert('Game Over! You hit a mine.');
+        revealAllMines();
+        // Disable further clicks on the board by removing listeners from all cells
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.removeEventListener('click', handleCellClick);
+        });
+        return;
     } else {
-        if (cell.neighborCount > 0) {
-            cell.element.querySelector('.cell-content').textContent = cell.neighborCount;
-            cell.element.classList.add(`count-${cell.neighborCount}`); // Add class for color styling
-        } else {
-            // If neighbor count is 0, reveal adjacent cells (flood fill)
-            cell.element.querySelector('.cell-content').textContent = ''; // Empty for 0 count
+        revealedCellsCount++;
+        if (cellValue > 0) {
+            cellElement.textContent = cellValue;
+            cellElement.classList.add(`count-${cellValue}`);
+        } else { // cellValue === 0, flood fill
+            // Recursively reveal neighbors
             for (let dr = -1; dr <= 1; dr++) {
                 for (let dc = -1; dc <= 1; dc++) {
                     if (dr === 0 && dc === 0) continue;
+                    revealCell(row + dr, col + dc); // Recursive call
+                }
+            }
+        }
+    }
 
-                    const newRow = row + dr;
-                    const newCol = col + dc;
+    // Check for win condition (all non-mine cells revealed)
+    if (revealedCellsCount === (GRID_SIZE * GRID_SIZE) - NUM_MINES) {
+        alert('Congratulations! You cleared the field!');
+        // Disable further clicks on the board by removing listeners from all cells
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.removeEventListener('click', handleCellClick);
+        });
+    }
+}
 
-                    if (newRow >= 0 && newRow < GRID_SIZE &&
-                        newCol >= 0 && newCol < GRID_SIZE) {
-                        revealCell(newRow, newCol); // Recursively reveal neighbors
-                    }
+function revealAllMines() {
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            if (board[r][c] === 'mine') {
+                const cellElement = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+                if (cellElement && !cellElement.classList.contains('revealed')) {
+                    cellElement.classList.remove('hidden');
+                    cellElement.classList.add('revealed', 'mine-revealed');
+                    cellElement.textContent = '💣';
                 }
             }
         }
     }
 }
 
-// Event listener for cell clicks
-function handleCellClick(event) {
-    // Ensure we are clicking on the cell div itself, not its child span
-    const cellElement = event.target.closest('.cell');
-    if (!cellElement || cellElement.classList.contains('revealed')) {
-        return; // Do nothing if not a cell or already revealed
-    }
-    const { row, col } = getCoords(cellElement.id);
-    revealCell(row, col);
-}
-
-// Function to create the grid in the DOM
-function createGridElements() {
-    const gridContainer = document.getElementById('minesweeper-grid');
-    gridContainer.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
-    gridContainer.style.gridTemplateRows = `repeat(${GRID_SIZE}, 1fr)`;
-
-    for (let r = 0; r < GRID_SIZE; r++) {
-        for (let c = 0; c < GRID_SIZE; c++) {
-            const cellElement = document.createElement('div');
-            cellElement.id = `cell-${r}-${c}`;
-            cellElement.classList.add('cell');
-            cellElement.addEventListener('click', handleCellClick);
-
-            const span = document.createElement('span');
-            span.classList.add('cell-content'); // Initially hidden by CSS
-            cellElement.appendChild(span);
-
-            board[r][c].element = cellElement; // Store reference
-            gridContainer.appendChild(cellElement);
-        }
-    }
-}
-
-// Initialize game on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
-    initializeBoard();
-    createGridElements();
+    gameBoardElement = document.getElementById('minesweeper-grid');
+    initializeGame();
+    renderBoard();
 });
