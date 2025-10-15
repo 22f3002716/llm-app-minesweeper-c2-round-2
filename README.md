@@ -1,31 +1,27 @@
-# Minesweeper Web Application
+# Minesweeper Game
 
-This is a simple single-page web application implementing the classic game of Minesweeper.
-
-## Features
-
-*   **8x8 Grid**: A standard grid size for quick gameplay.
-*   **10 Randomly Placed Mines**: Mines are distributed randomly at the start of each game.
-*   **Reveal Cells**: Click on a square to reveal its content.
-*   **Neighbor Count Logic**: Non-mine squares display the number of adjacent mines (0-8).
-*   **Automatic Empty Cell Revelation**: Clicking on an empty square (with 0 adjacent mines) automatically reveals all contiguous empty squares and their numbered neighbors.
-*   **Basic Styling**: Clear visual distinction between unrevealed, revealed, and mine squares.
+This is a simple 8x8 Minesweeper game implemented as a single-page web application.
 
 ## How to Play
 
-1.  Open `index.html` in your web browser.
-2.  The 8x8 grid will appear with all squares hidden.
-3.  Click on any square to reveal it:
-    *   If it's a mine (💣), the game visually indicates a mine was hit.
-    *   If it's a non-mine square, it will reveal a number indicating how many mines are adjacent to it.
-    *   If the number is 0, all adjacent squares (including their neighbors if they are also 0) will automatically be revealed.
+1.  **Objective:** Reveal all the squares that do not contain mines.
+2.  **Clicking a Square:**
+    *   If you click on a square with a mine (💣), the game ends.
+    *   If you click on an empty square (no adjacent mines), it will reveal itself and automatically clear all adjacent empty squares until it hits squares with numbers.
+    *   If you click on a numbered square, it will reveal the number, indicating how many mines are adjacent to it (horizontally, vertically, and diagonally).
+3.  **Winning:** The game is won when all non-mine squares are revealed.
 
-## Technical Details
+## Features
 
-*   **HTML (index.html)**: Provides the basic structure of the web page and the container for the game grid.
-*   **CSS (style.css)**: Handles the visual presentation, including grid layout, cell styling, and visual cues for revealed cells and mine counts.
-*   **JavaScript (script.js)**: Implements the core game logic:
-    *   Board initialization and mine placement.
-    *   Calculation of adjacent mine counts.
-    *   Event handling for cell clicks.
-    *   Recursive revelation of empty cells (`flood fill` algorithm).
+*   8x8 grid with 10 randomly placed mines.
+*   Click to reveal squares.
+*   Automatic neighbor count display.
+*   Flood-fill reveal for empty squares.
+*   Game over condition on hitting a mine.
+*   Win condition when all safe squares are revealed.
+
+## Technologies Used
+
+*   HTML5
+*   CSS3
+*   JavaScript (ES6+)
